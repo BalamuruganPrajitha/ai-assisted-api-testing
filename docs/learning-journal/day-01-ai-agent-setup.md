@@ -402,3 +402,437 @@ Main lesson:
 > Use AI agents to accelerate engineering work, but keep
 > requirements, expected behavior, review, and final validation
 > under human control.
+
+
+
+---
+
+# Module 2 – First AI-Assisted Karate API Test
+
+## Objective
+
+The objective of this module was to learn how to use an AI coding
+agent in a controlled software-testing workflow.
+
+The goal was not simply to ask AI to generate automation code.
+
+The workflow followed was:
+
+Requirement
+    ↓
+Human Test Design
+    ↓
+AI Test Design
+    ↓
+Human Review
+    ↓
+Controlled AI Implementation
+    ↓
+AI Test Execution
+    ↓
+Human Code Review
+    ↓
+Independent Human Test Execution
+    ↓
+Git Review
+    ↓
+Commit and Push
+
+---
+
+## 1. Human Test Design First
+
+Before asking AI to generate test scenarios, I manually identified
+possible scenarios for:
+
+GET /users/{id}
+
+Initial ideas included:
+
+- Valid user ID
+- Invalid/non-existing user ID
+- Missing user ID
+- Header validation
+- Unsupported HTTP method
+
+This ensured that AI was assisting my QA thinking rather than
+replacing it.
+
+---
+
+## 2. Human QA vs AI QA
+
+Codex was asked to independently analyze the requirement without
+creating code.
+
+It identified additional areas including:
+
+- Positive scenarios
+- Negative scenarios
+- Boundary values
+- Invalid ID formats
+- Response validation
+- HTTP/protocol validation
+- Content type
+- Malformed paths
+
+An important observation was that:
+
+GET /users/
+
+cannot automatically be considered an invalid request because it may
+represent a valid collection endpoint.
+
+Therefore, expected behavior should come from the API contract rather
+than assumptions.
+
+---
+
+## 3. Important QA Principle – Test Oracle
+
+The current API response should not automatically become the expected
+result.
+
+Correct approach:
+
+Requirement / API Contract
+        ↓
+Expected Behavior
+        ↓
+Test Design
+        ↓
+Execute API
+        ↓
+Actual Result
+        ↓
+Compare Expected vs Actual
+
+AI should help generate tests, but the QA engineer remains responsible
+for validating expected behavior.
+
+---
+
+## 4. Avoid AI Over-Testing
+
+AI can generate a very large number of possible scenarios.
+
+Not every generated scenario needs automation.
+
+The QA engineer should prioritize tests based on:
+
+- Business risk
+- Requirement importance
+- Regression value
+- Failure impact
+- Maintenance cost
+
+AI provides breadth.
+
+QA provides prioritization.
+
+---
+
+## 5. Controlled Codex Implementation
+
+Codex was given permission to implement only a small defined scope.
+
+It was allowed to create:
+
+- pom.xml
+- ApiTestRunner.java
+- karate-config.js
+- users.feature
+
+It was explicitly instructed NOT to:
+
+- Add unnecessary utilities
+- Add authentication
+- Add CI/CD
+- Add extra test scenarios
+- Modify README
+- Commit code
+- Push code
+
+This demonstrated the importance of setting boundaries for coding
+agents.
+
+---
+
+## 6. First Karate Test
+
+Implemented:
+
+GET /users/1
+
+Assertions:
+
+- HTTP status = 200
+- response.id = 1
+- name is a string
+- name is not empty
+- email is a string
+- email is not empty
+
+The important lesson was that checking only HTTP 200 is not sufficient.
+
+For example:
+
+Request:
+
+GET /users/1
+
+Response:
+
+{
+  "id": 5
+}
+
+could still return HTTP 200.
+
+Therefore, business-level assertions are required in addition to
+HTTP-level assertions.
+
+---
+
+## 7. Karate Framework Flow
+
+The first framework execution flow is:
+
+mvn test
+    ↓
+Maven Surefire
+    ↓
+ApiTestRunner.java
+    ↓
+Karate
+    ↓
+users.feature
+    ↓
+HTTP API
+    ↓
+Assertions
+    ↓
+Karate HTML Report
+
+---
+
+## 8. Configuration Learning
+
+The base URL was placed in:
+
+karate-config.js
+
+instead of hard-coding the complete URL inside the feature.
+
+This prepares the framework for future environment support such as:
+
+- DEV
+- QA
+- STAGING
+
+---
+
+## 9. AI Permission Handling
+
+During execution, Codex required additional permission for Maven
+dependency/cache access and network access.
+
+Instead of permanently granting unrestricted permission, the request
+was reviewed and "Allow once" was selected.
+
+Lesson:
+
+AI agent permission requests should be reviewed based on:
+
+- What access is requested?
+- Why is it required?
+- Is it necessary for the task?
+- Can minimum/temporary permission be used?
+
+---
+
+## 10. AI Failure Investigation
+
+The first Maven execution encountered an environment/sandbox
+permission issue.
+
+Codex identified that the failure was related to Maven cache/network
+permission instead of immediately changing framework code.
+
+Important lesson:
+
+Test failure does not always mean code failure.
+
+Possible causes include:
+
+- Application defect
+- Automation defect
+- Test-data issue
+- Environment issue
+- Network issue
+- Permission issue
+- Dependency/tooling issue
+
+The cause should be understood before changing code.
+
+---
+
+## 11. Human Validation
+
+After Codex reported that the test passed, I independently executed:
+
+mvn test
+
+Result:
+
+Tests run: 1
+Failures: 0
+Errors: 0
+Skipped: 0
+
+BUILD SUCCESS
+
+This demonstrated an important AI-assisted engineering rule:
+
+Do not rely only on the AI agent saying that something works.
+
+Verify important results independently.
+
+---
+
+## 12. Git Repository Learning
+
+The repository was accidentally cloned inside another folder with the
+same name.
+
+The actual Git root was identified using:
+
+git rev-parse --show-toplevel
+
+The directory structure was then safely corrected.
+
+Lesson:
+
+A folder containing project files is not necessarily the Git
+repository root.
+
+Useful command:
+
+git rev-parse --show-toplevel
+
+---
+
+## 13. Git Ignore Learning
+
+Maven creates generated build output under:
+
+target/
+
+Generated build artifacts should not normally be committed.
+
+Added:
+
+target/
+
+to .gitignore.
+
+After this change, target/ disappeared from:
+
+git status
+
+while remaining available locally.
+
+---
+
+## 14. Reviewing Changes Before Commit
+
+Before committing, the following workflow was used:
+
+git status
+
+git add ...
+
+git status
+
+git diff --cached
+
+git diff --cached shows exactly what is staged for the next commit.
+
+This provides a final human review point before committing AI-generated
+changes.
+
+---
+
+## 15. Git Identity
+
+Git initially used an automatically generated local identity.
+
+Global Git identity was configured using:
+
+git config --global user.name
+git config --global user.email
+
+The existing local commit was corrected before pushing.
+
+This is especially important for public portfolio repositories.
+
+---
+
+## 16. First Framework Commit
+
+Commit:
+
+feat: add initial Karate API test framework
+
+The commit was successfully pushed to GitHub.
+
+Final verification:
+
+git status
+
+Result:
+
+Your branch is up to date with 'origin/main'.
+nothing to commit, working tree clean
+
+---
+
+## Module 2 Key Takeaway
+
+The purpose of AI-assisted testing is not:
+
+AI writes tests → QA accepts them
+
+The preferred workflow is:
+
+Human understands requirement
+        ↓
+Human designs core coverage
+        ↓
+AI expands possibilities
+        ↓
+Human prioritizes
+        ↓
+AI implements controlled scope
+        ↓
+AI executes
+        ↓
+Human reviews
+        ↓
+Human independently validates
+        ↓
+Commit and Push
+
+AI accelerates implementation and expands thinking.
+
+The QA engineer remains responsible for requirements, risk,
+expected behavior, test quality, and final approval.
+
+---
+
+## Module 2 Status
+
+COMPLETED – First Milestone
+
+Successfully built and pushed the first working AI-assisted
+Karate API test framework.
